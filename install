@@ -1,0 +1,33 @@
+#!/usr/bin/bash
+
+usage="Usage: $(basename "$0") [-h | --help]
+
+The executable located at ./src/tmux-session will be installed by copying 
+it to /usr/local/bin/tmux-session.
+
+Options:
+    -h, --help  Show this help text."
+
+directory=/usr/local/bin
+this_dir=$(dirname $(realpath ${BASH_SOURCE:-$0}))
+
+if [[ $1 == "-h" || $1 == "--help" ]]; then
+    echo "$usage"
+    exit 0
+fi
+
+if [[ $# -gt 1 ]]; then
+    echo "$usage"
+    exit 1
+fi
+
+if [[ ! -d $directory ]]; then
+    echo "Directory $directory does not exist. Install tmux-session manually by
+placing the executable located at ./src/tmux-session in a directory that is
+in your PATH."
+    exit 1
+fi
+
+echo "Installing tmux-session at $directory/tmux-session"
+cp -r "$this_dir/src/tmux-session" "$directory/tmux-session"
+echo "Installation done."

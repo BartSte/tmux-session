@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+
+usages="Usage: $(basename "$0") [-h | --help] 
+
+The executable located at ./src/tmux-session will be uninstalled by removing
+it from /usr/local/bin/tmux-session.
+
+Options:
+    -h, --help  Show this help text."
+
+directory=/usr/local/bin
+
+if [[ $1 == "-h" || $1 == "--help" ]]; then
+    echo "$usages"
+    exit 0
+fi
+
+if [[ $# -gt 1 ]]; then
+    echo "$usages"
+    exit 1
+fi
+
+if [[ ! -d $directory ]]; then
+    echo "Directory $directory does not exist. Unstallation cannot be done."
+    exit 1
+fi
+
+if [[ ! -f $directory/tmux-session ]]; then
+    echo "File $directory/tmux-session does not exist. Looks like tmux-session is not installed."
+    exit 1
+fi
+
+echo "Uninstalling tmux-session by removing $directory/tmux-session"
+rm $directory/tmux-session
+echo "Uninstall done."
