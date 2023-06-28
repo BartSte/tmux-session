@@ -1,53 +1,142 @@
 #!/usr/bin/bash
-#
-# For a given directory, a new tmux session is created with a name that
-# corresponds to the top folder. If this session exists, the session is
-# activatedds and no new one is created.
-#
-# If no directory is given, fzf is activated to select one. The default
-# directory is the home directory. If a config file exists at
-# ~/.config/tmux-session/dirs, where each line should be a directory where
-# the tmux-session should will search.
-#
-# For command $2 a `tmux -t $session_name` command can be specified, where $3
-# are the arguments. $2 and $3 are optional.
 
-TMUX_SESSION_DIRS=~/.config/tmux-session/dirs
+usage="Usage: tmux-session [-h | --help] <directory>
 
-get_directory() {
-    if [[ $# -ge 1 ]]; then
-        echo $1
-    elif [[ -f $TMUX_SESSION_DIRS ]]; then
-        dirs=$(cat $TMUX_SESSION_DIRS | tr '\n' ' ')
+For a given directory, the following will happen:
+- a new tmux session is created with a name that corresponds to the top folder. 
+- if the session already exists, the session is activated and no new one is created.
+- if the directory does not exist the command is aborted. 
+- if no directory is given, fzf is activated to select one. 
+
+If a file exists at ~/.config/tmux-session/dirs, where each line is a 
+directory, fzf will search for projects in those locations. Alternatively,
+the config file can be specified using the --config option.
+
+If a command is specified using the --hook option, it will be run after the
+session is created. 
+
+where:
+    options:
+    -h --help       shows this help messages
+    -c --config     a config file with directories to search for
+       --hook       a command to run after the session is created
+    -d --debug      print debug messages
+
+    positional:
+    <directory>   a directory to create a tmux session for"
+
+debug() {
+    echo "$@" &> $output
+}
+
+parse_args() {
+    local options
+    options=$(getopt -o hc:d --long help,config:,hook:,debug -- "$@")
+    eval set -- "$options"
+
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+            -h | --help)
+                echo "$usage"
+                exit 0
+                ;;
+            -c | --config)
+                config="$2"
+                shift
+                shift
+                ;;
+            --hook)
+                # TODO
+                # When processing the hook, we must capture all the command
+                # line arguments that are enclosed in signle, or double quotes.
+                # This is because the hook is a command that is executed by
+                # eval.
+                hook="$2"
+                shift
+                shift
+                ;;
+
+            -d | --debug)
+                output=/dev/stdout
+                shift
+                ;;
+            --)
+                directory="$2"
+                shift
+                break
+                ;;
+            *)
+                echo "Unknown option: $key"
+                exit 1
+                ;;
+        esac
+    done
+    debug " The hook is $hook"
+}
+
+fzf_directory() {
+    local dirs
+
+    if [[ -f $config ]]; then
+        dirs=$(cat $config | tr '\n' ' ')
         eval "find $dirs -maxdepth 1 -type d 2> /dev/null| fzf"
     else
         find $HOME -maxdepth 1 -type d | fzf
     fi
 }
 
-exit_if_empty() {
-    if [[ -z $directory ]]; then
-        exit 0
-    fi
+get_top_folder() {
+    basename "$directory" | tr . _
 }
 
 set_status_bar() {
     [[ $# -eq 2 ]] && tmux set -t $session_name $@
 }
 
-directory=$(get_directory $@)
-exit_if_empty $directory
-session_name=$(basename "$directory" | tr . _)
+no_tmux() {
+    [[ -z $TMUX ]]
+}
 
-if [[ -z $TMUX ]]; then
-    tmux new-session -s $session_name -c $directory
-    set_status_bar $2 $3
-    exit 0
+has_session() {
+    tmux has-session -t $1 &> /dev/null
+}
+
+new_session() {
+    tmux new-session -s $1 -c $2 $3
+    # eval $hook # TODO: not implemented yet
+}
+
+hook=""
+config=~/.config/tmux-session/dirs
+output=/dev/null
+directory=""
+parse_args $@
+
+[[ -z $directory ]] && directory=$(fzf_directory)
+[[ -z $directory ]] && exit 0
+
+if [[ ! -d $directory ]]; then
+    echo 'Directory not found.'
+    exit 1
 fi
 
-if ! tmux has-session -t=$session_name 2> /dev/null; then
-    tmux new-session -ds $session_name -c $directory
-    set_status_bar $2 $3
+session_name=$(get_top_folder $directory)
+
+if no_tmux; then
+    if has_session $session_name; then
+        debug "Attach to tmux session $session_name"
+        tmux attach-session -t $session_name
+    else
+        debug "Create new session $session_name"
+        new_session $session_name $directory
+    fi
+else
+    if ! has_session $session_name; then
+        debug "Tmux active. Create new session $session_name"
+        new_session $session_name $directory -d
+    fi
+    debug "Switch to tmux session $session_name"
+    tmux switch-client -t $session_name
 fi
 
-tmux switch-client -t $session_name
