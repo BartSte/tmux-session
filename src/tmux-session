@@ -13,20 +13,24 @@ directory, fzf will search for projects in those locations. Alternatively,
 the config file can be specified using the --config option.
 
 If a command is specified using the --hook option, it will be run after the
-session is created. 
+session is created. The following variables are available:
+    - \$name: the name of the session
+    - \$directory: the directory of the session
+    - \$config: path to the config file
+    - \$hook: the hook command itsel
 
 where:
     options:
     -h --help       shows this help messages
     -c --config     a config file with directories to search for
-       --hook       a command to run after the session is created
+       --hook       a command to run after the session is created.
     -d --debug      print debug messages
 
     positional:
     <directory>   a directory to create a tmux session for"
 
 debug() {
-    echo "$@" &> $output
+    echo "$@" &>$output
 }
 
 parse_args() {
@@ -47,16 +51,10 @@ parse_args() {
                 shift
                 ;;
             --hook)
-                # TODO
-                # When processing the hook, we must capture all the command
-                # line arguments that are enclosed in signle, or double quotes.
-                # This is because the hook is a command that is executed by
-                # eval.
                 hook="$2"
                 shift
                 shift
                 ;;
-
             -d | --debug)
                 output=/dev/stdout
                 shift
@@ -91,7 +89,7 @@ get_top_folder() {
 }
 
 set_status_bar() {
-    [[ $# -eq 2 ]] && tmux set -t $session_name $@
+    [[ $# -eq 2 ]] && tmux set -t $name $@
 }
 
 no_tmux() {
@@ -99,44 +97,44 @@ no_tmux() {
 }
 
 has_session() {
-    tmux has-session -t $1 &> /dev/null
+    tmux has-session -t $1 &>/dev/null
 }
 
 new_session() {
     tmux new-session -s $1 -c $2 $3
-    # eval $hook # TODO: not implemented yet
+    eval $hook
 }
 
 hook=""
 config=~/.config/tmux-session/dirs
 output=/dev/null
 directory=""
-parse_args $@
+parse_args "$@"
 
 [[ -z $directory ]] && directory=$(fzf_directory)
 [[ -z $directory ]] && exit 0
 
 if [[ ! -d $directory ]]; then
-    echo 'Directory not found.'
-    exit 1
+    message="Directory $directory not found."
+    no_tmux && echo "$message" || tmux display-message -d 2000 "$message" 
+    exit 0
 fi
 
-session_name=$(get_top_folder $directory)
+name=$(get_top_folder $directory)
 
 if no_tmux; then
-    if has_session $session_name; then
-        debug "Attach to tmux session $session_name"
-        tmux attach-session -t $session_name
+    if has_session $name; then
+        debug "Attach to tmux session $name"
+        tmux attach-session -t $name
     else
-        debug "Create new session $session_name"
-        new_session $session_name $directory
+        debug "Create new session $name"
+        new_session $name $directory
     fi
 else
-    if ! has_session $session_name; then
-        debug "Tmux active. Create new session $session_name"
-        new_session $session_name $directory -d
+    if ! has_session $name; then
+        debug "Tmux active. Create new session $name"
+        new_session $name $directory -d
     fi
-    debug "Switch to tmux session $session_name"
-    tmux switch-client -t $session_name
+    debug "Switch to tmux session $name"
+    tmux switch-client -t $name
 fi
-
