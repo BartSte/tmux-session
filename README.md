@@ -17,7 +17,8 @@ Manage your tmux sessions using fzf.
 fzf. It allows you to: 
 - create or attach to sessions using fzf
 - create or attach to sessions using a keybinding
-- run a hook after creating a session
+- run a hook after creating a session  
+
 This repository is heavily inspired on ThePrimeagen's [tmux-sessionizer](https://github.com/ThePrimeagen/.dotfiles/blob/master/bin/.local/scripts/tmux-sessionizer).
 
 # Installation
