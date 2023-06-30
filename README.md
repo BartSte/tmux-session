@@ -1,6 +1,8 @@
 # README - tmux-session
 Manage your tmux sessions using fzf.
 
+![Demo](./demo.gif)
+
 # Contents
 - [Introduction](#introduction)
 - [Installation](#installation)
