@@ -18,12 +18,14 @@ session is created. The following variables are available:
     - \$directory: the directory of the session
     - \$config: path to the config file
     - \$hook: the hook command itsel
+    - \$symlinks: symlinks follow option
 
 options:
     -h --help       shows this help messages
     -c --config     a config file with directories to search for
        --hook       a command to run after the session is created.
     -d --debug      print debug messages
+    -L              follow symlinks
 
 positional:
     <directory>   a directory to create a tmux session for"
@@ -47,10 +49,11 @@ debug() {
 # - $directory: the directory to create the session for
 # - $output: the output file to use for debug messages
 # - $name: the name of the session
+# - $symlinks: whether to follow symlinks
 ##############################################################################
 parse_args() {
     local options
-    options=$(getopt -o hc:d --long help,config:,hook:,debug -- "$@")
+    options=$(getopt -o hc:dL --long help,config:,hook:,debug -- "$@")
     eval set -- "$options"
 
     while [[ $# -gt 0 ]]; do
@@ -72,6 +75,10 @@ parse_args() {
                 ;;
             -d | --debug)
                 output=/dev/stdout
+                shift
+                ;;
+            -L)
+                symlinks="$key"
                 shift
                 ;;
             --)
@@ -98,9 +105,9 @@ fzf_directory() {
 
     if [[ -f $config ]]; then
         dirs=$(cat $config | tr '\n' ' ')
-        eval "find $dirs -maxdepth 1 -type d 2> /dev/null| fzf"
+        eval "find $symlinks $dirs -maxdepth 1 -type d 2> /dev/null| fzf"
     else
-        find $HOME -maxdepth 1 -type d | fzf
+        find $symlinks $HOME -maxdepth 1 -type d | fzf
     fi
 }
 
@@ -156,6 +163,7 @@ hook=""
 config=~/.config/tmux-session/dirs
 output=/dev/null
 directory=""
+symlinks=""
 parse_args "$@"
 
 [[ -z $directory ]] && directory=$(fzf_directory)
