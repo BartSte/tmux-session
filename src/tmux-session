@@ -98,9 +98,9 @@ fzf_directory() {
 
     if [[ -f $config ]]; then
         dirs=$(cat $config | tr '\n' ' ')
-        eval "find $dirs -maxdepth 1 -type d 2> /dev/null| fzf"
+        eval "find -L $dirs -maxdepth 1 -type d 2> /dev/null| fzf"
     else
-        find $HOME -maxdepth 1 -type d | fzf
+        find -L $HOME -maxdepth 1 -type d | fzf
     fi
 }
 
