@@ -8,4 +8,8 @@ user. A change is always categorized based on the following types:
 - Task: a change is made to the repository that has no effect on the source
 code.
 
+# 0.0.1
+- Added support for symlinks
+
 # 0.0.0
+- First release.
