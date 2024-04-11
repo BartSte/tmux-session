@@ -22,6 +22,9 @@ fzf. It allows you to:
 This repository is heavily inspired on ThePrimeagen's [tmux-sessionizer](https://github.com/ThePrimeagen/.dotfiles/blob/master/bin/.local/scripts/tmux-sessionizer).
 
 # Installation
+
+## Manual
+
 Ensure that you have the following tools installed:
 - [tmux](www.github.com/tmux/tmux)
 - [fzf](www.github.com/junegunn/fzf)
@@ -34,6 +37,17 @@ git clone https://github.com/BartSte/tmux-session.git $tmp_dir;
 sudo $tmp_dir/install;
 rm -rf $tmp_dir;
 ```
+
+## Package manager
+
+### Arch Linux
+
+`tmux-session` is available in the AUR. You can install it using for example
+`yay`:
+```bash
+yay -S tmux-session
+```
+
 # Usage
 
 ## New session / attach to session
