@@ -23,6 +23,7 @@ This repository is heavily inspired on ThePrimeagen's [tmux-sessionizer](https:/
 
 # Installation
 Ensure that you have the following tools installed:
+- [tmux](www.github.com/tmux/tmux)
 - [fzf](www.github.com/junegunn/fzf)
 
 Next, run the following command to install `tmux-session` in the 
